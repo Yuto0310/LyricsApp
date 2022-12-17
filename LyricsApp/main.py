@@ -5,6 +5,13 @@ import rumps
 import urllib.request
 
 
+songInfo = None
+songName = None
+artistName = None
+lyrics = None
+lyricsList = None
+listbox = None
+
 def check_internet():
     try:
         urllib.request.urlopen('http://google.com', timeout=1)
@@ -15,18 +22,31 @@ def check_internet():
 
 def reloadList():
     global songInfo, songName, artistName, lyrics, lyricsList, listbox
-    if songInfo != getSpotifyCurrentTrack.getInfo():
-        songInfo = getSpotifyCurrentTrack.getInfo()
-        songName = songInfo[0]
-        artistName = songInfo[1]
-        if check_internet():
-            lyrics = getLyrics.getLyrics(artistName=artistName, songName=songName)
-            if lyrics == None:
-                lyricsList = ("すいません。歌詞が登録されていません。")
+    if getSpotifyCurrentTrack.confirmRunning():
+        if songInfo != getSpotifyCurrentTrack.getInfo():
+            songInfo = getSpotifyCurrentTrack.getInfo()
+            songName = songInfo[0]
+            artistName = songInfo[1]
+            if check_internet():
+                lyrics = getLyrics.getLyrics(artistName=artistName, songName=songName)
+                if lyrics == None:
+                    lyricsList = ("すいません。歌詞が登録されていません。")
+                else:
+                    lyricsList = lyrics.split("\n")
             else:
-                lyricsList = lyrics.split("\n")
-        else:
-            lyricsList = ("インターネットに接続されていません。接続を確認してください。")
+                lyricsList = ("インターネットに接続されていません。接続を確認してください。")
+            listbox = tk.Listbox(
+                root,
+                width=70,
+                height=30,
+                font=("Helvetica", 14),
+                listvariable=tk.StringVar(value=lyricsList)
+            )
+            listbox.grid(row=0, column=0)
+
+    else:
+        lyricsList = ("Spotifyアプリが起動していません。")
+        songInfo = None
         listbox = tk.Listbox(
             root,
             width=70,
@@ -48,21 +68,21 @@ class rumpsApp(rumps.App):
     @rumps.clicked("リロード")
     def reload(self, sender):
         reloadList()
-
-
-songInfo = getSpotifyCurrentTrack.getInfo()
-songName = songInfo[0]
-artistName = songInfo[1]
-lyricsList = None
-# エラー処理
-if check_internet():
-    lyrics = getLyrics.getLyrics(artistName=artistName, songName=songName)
-    if lyrics == None:
-        lyricsList = ("すいません。歌詞が登録されていません。")
+if getSpotifyCurrentTrack.confirmRunning():
+    songInfo = getSpotifyCurrentTrack.getInfo()
+    songName = songInfo[0]
+    artistName = songInfo[1]
+    # エラー処理
+    if check_internet():
+        lyrics = getLyrics.getLyrics(artistName=artistName, songName=songName)
+        if lyrics is None:
+            lyricsList = ("すいません。歌詞が登録されていません。")
+        else:
+            lyricsList = lyrics.split("\n")
     else:
-        lyricsList = lyrics.split("\n")
+        lyricsList = ("インターネットに接続されていません。接続を確認してください。")
 else:
-    lyricsList = ("インターネットに接続されていません。接続を確認してください。")
+    lyricsList = ("Spotifyアプリが起動されていません。")
 
 root = tk.Tk()
 # Hide the root window drag bar and close button
